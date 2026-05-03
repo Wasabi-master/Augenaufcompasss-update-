@@ -60,6 +60,7 @@ button{
 <button onclick="start()">Start</button>
 
 <div id="status" class="small"></div>
+<div id="debug" class="small"></div>
 
 <div style="margin-top:10px">
 Lösungswort: <b id="word"></b>
@@ -76,7 +77,6 @@ let solution="";
 let currentStation=null;
 let saved = JSON.parse(localStorage.getItem("progress")||"[]");
 
-/* echte Koordinaten */
 const points=[
 {lat:51.3733,lng:7.6937,q:"Mahnmal am Poth?",a:"B",l:"D"},
 {lat:51.3734,lng:7.6956,q:"Luftschutzstollen?",a:"B",l:"E"},
@@ -90,7 +90,6 @@ const points=[
 {lat:51.3748,lng:7.7106,q:"Lehre?",a:"B",l:"E"}
 ];
 
-/* Antworten */
 const answers=[
 {A:"Händler",B:"NS-Opfer",C:"Stadt"},
 {A:"Lager",B:"Schutzräume",C:"Treffpunkte"},
@@ -123,7 +122,6 @@ Math.cos((b.lng-a.lng)*Math.PI/180);
 return (Math.atan2(y,x)*180/Math.PI+360)%360;
 }
 
-/* einfache Richtung */
 function getDirection(deg){
 const dirs=["Norden","Nord-Ost","Osten","Süd-Ost","Süden","Süd-West","Westen","Nord-West"];
 return dirs[Math.round(deg/45)%8];
@@ -142,7 +140,6 @@ update();
 });
 }
 
-/* nächste Station */
 function getNext(){
 return points.find((p,i)=>!saved.includes(i));
 }
@@ -157,14 +154,20 @@ let dir=getDirection(angle(userPos,next));
 document.getElementById("status").innerHTML =
 "Gehe nach <b>"+dir+"</b> ("+d+" m)";
 
-if(d<60 && currentStation===null){
-currentStation=next;
+if(d < 100){
+if(currentStation !== next){
+currentStation = next;
 showPopup(next);
+}
 }
 }
 
 solution = saved.map(i=>points[i].l).join("");
 document.getElementById("word").innerText=solution;
+
+/* Debug */
+document.getElementById("debug").innerText =
+userPos ? "GPS aktiv" : "Kein GPS Zugriff";
 }
 
 function showPopup(p){
