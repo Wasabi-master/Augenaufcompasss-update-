@@ -75,31 +75,33 @@ Lösungswort: <b id="word"></b>
 let userPos=null;
 let solution="";
 let currentStation=null;
+let showQuestion=false;
+
 let saved = JSON.parse(localStorage.getItem("progress")||"[]");
 
 const points=[
-{lat:51.3733,lng:7.6937,q:"Mahnmal am Poth?",a:"B",l:"D"},
-{lat:51.3734,lng:7.6956,q:"Luftschutzstollen?",a:"B",l:"E"},
-{lat:51.3743,lng:7.6976,q:"Stolpersteine?",a:"B",l:"M"},
-{lat:51.3745,lng:7.6978,q:"Jüdische Geschäfte?",a:"A",l:"O"},
-{lat:51.3749,lng:7.6982,q:"Verfolgung?",a:"A",l:"K"},
-{lat:51.3743,lng:7.6990,q:"Gedenktafel?",a:"C",l:"R"},
-{lat:51.3742,lng:7.6995,q:"Stolpersteine zeigen?",a:"B",l:"A"},
-{lat:51.3745,lng:7.7040,q:"Synagoge?",a:"B",l:"T"},
-{lat:51.3759,lng:7.7099,q:"Erinnerung?",a:"A",l:"I"},
-{lat:51.3748,lng:7.7106,q:"Lehre?",a:"B",l:"E"}
+{lat:51.3733,lng:7.6937,info:"Dieses Mahnmal erinnert an eine Zeit, in der Menschen verfolgt und ermordet wurden.",q:"Woran erinnert das Mahnmal?",a:"B",l:"D"},
+{lat:51.3734,lng:7.6956,info:"Menschen mussten sich im Krieg vor Bomben schützen – oft unter der Erde.",q:"Wozu dienten Luftschutzstollen?",a:"B",l:"E"},
+{lat:51.3743,lng:7.6976,info:"Kleine Steine im Boden erinnern an Menschen, die hier gelebt haben.",q:"Was sind Stolpersteine?",a:"B",l:"M"},
+{lat:51.3745,lng:7.6978,info:"Viele Geschäfte wurden gezielt zerstört oder übernommen.",q:"Was geschah mit jüdischen Geschäften?",a:"A",l:"O"},
+{lat:51.3749,lng:7.6982,info:"Menschen wurden verfolgt, nicht wegen Taten, sondern wegen ihrer Identität.",q:"Warum wurden Familien verfolgt?",a:"A",l:"K"},
+{lat:51.3743,lng:7.6990,info:"Gedenktafeln erinnern oft an Opfer und mutige Menschen.",q:"Woran erinnern Gedenktafeln?",a:"C",l:"R"},
+{lat:51.3742,lng:7.6995,info:"Jeder Stein steht für ein einzelnes Leben.",q:"Was symbolisieren Stolpersteine?",a:"B",l:"A"},
+{lat:51.3745,lng:7.7040,info:"Viele religiöse Gebäude wurden zerstört.",q:"Was geschah mit Synagogen?",a:"B",l:"T"},
+{lat:51.3759,lng:7.7099,info:"Erinnern macht Geschichte persönlich.",q:"Warum ist Erinnern wichtig?",a:"A",l:"I"},
+{lat:51.3748,lng:7.7106,info:"Zeitzeugen zeigen, wie wichtig unsere Werte heute sind.",q:"Was ist eine wichtige Lehre?",a:"B",l:"E"}
 ];
 
 const answers=[
-{A:"Händler",B:"NS-Opfer",C:"Stadt"},
-{A:"Lager",B:"Schutzräume",C:"Treffpunkte"},
-{A:"Kunst",B:"Gedenktafeln",C:"Steine"},
+{A:"Wiederaufbau",B:"Opfer des Nationalsozialismus",C:"Händler"},
+{A:"Treffpunkte",B:"Schutzräume",C:"Lager"},
+{A:"Steine",B:"Gedenksteine",C:"Kunst"},
 {A:"Zerstört",B:"Gefördert",C:"Unverändert"},
-{A:"Religion",B:"Beruf",C:"Kleidung"},
-{A:"Künstler",B:"Sport",C:"Verfolgung"},
+{A:"Religion",B:"Beruf",C:"Wohnort"},
+{A:"Sport",B:"Künstler",C:"Verfolgung"},
 {A:"Städte",B:"Schicksale",C:"Gebäude"},
 {A:"Erweitert",B:"Zerstört",C:"Museen"},
-{A:"Greifbar",B:"Sammeln",C:"Füllen"},
+{A:"Greifbar",B:"Sammeln",C:"Straßen"},
 {A:"Vergessen",B:"Demokratie schützen",C:"Vergangenheit"}
 ];
 
@@ -127,7 +129,6 @@ const dirs=["Norden","Nord-Ost","Osten","Süd-Ost","Süden","Süd-West","Westen"
 return dirs[Math.round(deg/45)%8];
 }
 
-/* iPhone fix */
 async function start(){
 if(typeof DeviceOrientationEvent!=="undefined" &&
 typeof DeviceOrientationEvent.requestPermission==="function"){
@@ -154,31 +155,36 @@ let dir=getDirection(angle(userPos,next));
 document.getElementById("status").innerHTML =
 "Gehe nach <b>"+dir+"</b> ("+d+" m)";
 
-if(d < 100){
-if(currentStation !== next){
-currentStation = next;
+if(d<100 && currentStation===null){
+currentStation=next;
+showQuestion=false;
 showPopup(next);
-}
 }
 }
 
 solution = saved.map(i=>points[i].l).join("");
 document.getElementById("word").innerText=solution;
 
-/* Debug */
 document.getElementById("debug").innerText =
-userPos ? "GPS aktiv" : "Kein GPS Zugriff";
+userPos ? "GPS aktiv" : "Kein GPS";
 }
 
 function showPopup(p){
 let i=points.indexOf(p);
 
 let html="<div class='popup'>";
+
+if(!showQuestion){
 html+="<h3>Station "+(i+1)+"</h3>";
+html+="<p>"+p.info+"</p>";
+html+="<button onclick='showQuestion=true;showPopup(points["+i+"])'>Frage anzeigen</button>";
+}else{
+html+="<h3>Frage</h3>";
 html+="<p>"+p.q+"</p>";
 
 for(let k in answers[i]){
 html+="<button onclick=\"answer("+i+",'"+k+"')\">"+k+") "+answers[i][k]+"</button>";
+}
 }
 
 html+="</div>";
