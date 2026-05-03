@@ -1,0 +1,204 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+<meta charset="UTF-8">
+<title>Augen Auf Compass</title>
+
+<style>
+body{
+  margin:0;
+  background:#0b1220;
+  color:#e5e7eb;
+  font-family:system-ui, -apple-system, sans-serif;
+}
+
+header{
+  text-align:center;
+  padding:16px;
+  background:#0f172a;
+}
+
+.container{
+  padding:16px;
+  max-width:700px;
+  margin:auto;
+}
+
+button{
+  width:100%;
+  padding:12px;
+  margin-top:8px;
+  border:none;
+  border-radius:10px;
+  background:#1f2937;
+  color:white;
+}
+
+.popup{
+  position:fixed;
+  bottom:0;
+  left:0;
+  right:0;
+  background:#111827;
+  padding:20px;
+  border-radius:20px 20px 0 0;
+}
+
+.small{
+  color:#9ca3af;
+  font-size:14px;
+}
+</style>
+</head>
+
+<body>
+
+<header>Augen Auf Compass</header>
+
+<div class="container">
+
+<button onclick="start()">Start</button>
+
+<div id="status" class="small"></div>
+
+<div style="margin-top:10px">
+Lösungswort: <b id="word"></b>
+</div>
+
+</div>
+
+<div id="popup"></div>
+
+<script>
+
+let userPos=null;
+let solution="";
+let currentStation=null;
+let saved = JSON.parse(localStorage.getItem("progress")||"[]");
+
+/* echte Koordinaten */
+const points=[
+{lat:51.3733,lng:7.6937,q:"Mahnmal am Poth?",a:"B",l:"D"},
+{lat:51.3734,lng:7.6956,q:"Luftschutzstollen?",a:"B",l:"E"},
+{lat:51.3743,lng:7.6976,q:"Stolpersteine?",a:"B",l:"M"},
+{lat:51.3745,lng:7.6978,q:"Jüdische Geschäfte?",a:"A",l:"O"},
+{lat:51.3749,lng:7.6982,q:"Verfolgung?",a:"A",l:"K"},
+{lat:51.3743,lng:7.6990,q:"Gedenktafel?",a:"C",l:"R"},
+{lat:51.3742,lng:7.6995,q:"Stolpersteine zeigen?",a:"B",l:"A"},
+{lat:51.3745,lng:7.7040,q:"Synagoge?",a:"B",l:"T"},
+{lat:51.3759,lng:7.7099,q:"Erinnerung?",a:"A",l:"I"},
+{lat:51.3748,lng:7.7106,q:"Lehre?",a:"B",l:"E"}
+];
+
+/* Antworten */
+const answers=[
+{A:"Händler",B:"NS-Opfer",C:"Stadt"},
+{A:"Lager",B:"Schutzräume",C:"Treffpunkte"},
+{A:"Kunst",B:"Gedenktafeln",C:"Steine"},
+{A:"Zerstört",B:"Gefördert",C:"Unverändert"},
+{A:"Religion",B:"Beruf",C:"Kleidung"},
+{A:"Künstler",B:"Sport",C:"Verfolgung"},
+{A:"Städte",B:"Schicksale",C:"Gebäude"},
+{A:"Erweitert",B:"Zerstört",C:"Museen"},
+{A:"Greifbar",B:"Sammeln",C:"Füllen"},
+{A:"Vergessen",B:"Demokratie schützen",C:"Vergangenheit"}
+];
+
+function distance(a,b){
+const R=6371000;
+const dLat=(b.lat-a.lat)*Math.PI/180;
+const dLng=(b.lng-a.lng)*Math.PI/180;
+const x=Math.sin(dLat/2)**2+
+Math.cos(a.lat*Math.PI/180)*
+Math.cos(b.lat*Math.PI/180)*
+Math.sin(dLng/2)**2;
+return Math.round(R*2*Math.atan2(Math.sqrt(x),Math.sqrt(1-x)));
+}
+
+function angle(a,b){
+const y=Math.sin((b.lng-a.lng)*Math.PI/180)*Math.cos(b.lat*Math.PI/180);
+const x=Math.cos(a.lat*Math.PI/180)*Math.sin(b.lat*Math.PI/180)-
+Math.sin(a.lat*Math.PI/180)*Math.cos(b.lat*Math.PI/180)*
+Math.cos((b.lng-a.lng)*Math.PI/180);
+return (Math.atan2(y,x)*180/Math.PI+360)%360;
+}
+
+/* einfache Richtung */
+function getDirection(deg){
+const dirs=["Norden","Nord-Ost","Osten","Süd-Ost","Süden","Süd-West","Westen","Nord-West"];
+return dirs[Math.round(deg/45)%8];
+}
+
+/* iPhone fix */
+async function start(){
+if(typeof DeviceOrientationEvent!=="undefined" &&
+typeof DeviceOrientationEvent.requestPermission==="function"){
+await DeviceOrientationEvent.requestPermission();
+}
+
+navigator.geolocation.watchPosition(p=>{
+userPos={lat:p.coords.latitude,lng:p.coords.longitude};
+update();
+});
+}
+
+/* nächste Station */
+function getNext(){
+return points.find((p,i)=>!saved.includes(i));
+}
+
+function update(){
+let next=getNext();
+
+if(userPos && next){
+let d=distance(userPos,next);
+let dir=getDirection(angle(userPos,next));
+
+document.getElementById("status").innerHTML =
+"Gehe nach <b>"+dir+"</b> ("+d+" m)";
+
+if(d<60 && currentStation===null){
+currentStation=next;
+showPopup(next);
+}
+}
+
+solution = saved.map(i=>points[i].l).join("");
+document.getElementById("word").innerText=solution;
+}
+
+function showPopup(p){
+let i=points.indexOf(p);
+
+let html="<div class='popup'>";
+html+="<h3>Station "+(i+1)+"</h3>";
+html+="<p>"+p.q+"</p>";
+
+for(let k in answers[i]){
+html+="<button onclick=\"answer("+i+",'"+k+"')\">"+k+") "+answers[i][k]+"</button>";
+}
+
+html+="</div>";
+
+document.getElementById("popup").innerHTML=html;
+}
+
+function answer(i,val){
+if(points[i].a===val){
+saved.push(i);
+localStorage.setItem("progress",JSON.stringify(saved));
+
+document.getElementById("popup").innerHTML="";
+currentStation=null;
+update();
+}else{
+alert("Falsch");
+}
+}
+
+update();
+
+</script>
+
+</body>
+</html>
