@@ -12,7 +12,6 @@ body{
   font-family:system-ui, -apple-system, sans-serif;
 }
 
-/* Header */
 header{
   text-align:center;
   padding:20px;
@@ -20,14 +19,12 @@ header{
   background:#0f172a;
 }
 
-/* Layout */
 .container{
   padding:20px;
   max-width:800px;
   margin:auto;
 }
 
-/* Buttons */
 button{
   width:100%;
   padding:16px;
@@ -39,7 +36,6 @@ button{
   font-size:18px;
 }
 
-/* Compass */
 .compass{
   width:240px;
   height:240px;
@@ -50,12 +46,10 @@ button{
   justify-content:center;
   align-items:center;
   position:relative;
-
   background:radial-gradient(circle, #111827 40%, #020617);
   box-shadow:inset 0 0 20px rgba(255,255,255,0.05);
 }
 
-/* Neuer schöner Pfeil */
 .arrow{
   position:relative;
   width:0;
@@ -80,7 +74,6 @@ button{
   box-shadow:0 0 10px rgba(56,189,248,0.8);
 }
 
-/* Popup */
 .popup{
   position:fixed;
   bottom:0;
@@ -91,15 +84,8 @@ button{
   border-radius:25px 25px 0 0;
 }
 
-/* Text */
-.big{
-  font-size:20px;
-}
-
-.small{
-  font-size:16px;
-  color:#9ca3af;
-}
+.big{font-size:20px;}
+.small{font-size:16px;color:#9ca3af;}
 </style>
 </head>
 
@@ -130,23 +116,22 @@ Lösungswort: <b id="word"></b>
 
 let userPos=null;
 let heading=0;
-let solution="";
-let currentStation=null;
-let showQuestion=false;
+let currentStationIndex=null;
 
 let saved = JSON.parse(localStorage.getItem("progress")||"[]");
 
+/* Punkte MIT Info */
 const points=[
-{lat:51.3733,lng:7.6937,info:"Dieses Mahnmal erinnert an eine Zeit der Verfolgung.",q:"Woran erinnert das Mahnmal?",a:"B",l:"D"},
-{lat:51.3734,lng:7.6956,info:"Menschen suchten Schutz vor Bomben.",q:"Wozu dienten Luftschutzstollen?",a:"B",l:"E"},
-{lat:51.3743,lng:7.6976,info:"Kleine Steine erinnern an Menschen.",q:"Was sind Stolpersteine?",a:"B",l:"M"},
-{lat:51.3745,lng:7.6978,info:"Geschäfte wurden zerstört.",q:"Was geschah mit jüdischen Geschäften?",a:"A",l:"O"},
-{lat:51.3749,lng:7.6982,info:"Menschen wurden wegen ihrer Herkunft verfolgt.",q:"Warum wurden Familien verfolgt?",a:"A",l:"K"},
-{lat:51.3743,lng:7.6990,info:"Erinnerung an Opfer.",q:"Woran erinnern Gedenktafeln?",a:"C",l:"R"},
-{lat:51.3742,lng:7.6995,info:"Jeder Stein steht für ein Leben.",q:"Was symbolisieren Stolpersteine?",a:"B",l:"A"},
-{lat:51.3745,lng:7.7040,info:"Religiöse Gebäude wurden zerstört.",q:"Was geschah mit Synagogen?",a:"B",l:"T"},
-{lat:51.3759,lng:7.7099,info:"Erinnerung macht Geschichte greifbar.",q:"Warum ist Erinnern wichtig?",a:"A",l:"I"},
-{lat:51.3748,lng:7.7106,info:"Lehren für heute.",q:"Was ist eine wichtige Lehre?",a:"B",l:"E"}
+{lat:51.3733,lng:7.6937,info:"Dieses Mahnmal erinnert an eine Zeit, in der Menschen verfolgt wurden.",q:"Woran erinnert das Mahnmal?",a:"B",l:"D",state:0},
+{lat:51.3734,lng:7.6956,info:"Menschen suchten Schutz vor Bombenangriffen.",q:"Wozu dienten Luftschutzstollen?",a:"B",l:"E",state:0},
+{lat:51.3743,lng:7.6976,info:"Diese Steine erinnern an frühere Bewohner.",q:"Was sind Stolpersteine?",a:"B",l:"M",state:0},
+{lat:51.3745,lng:7.6978,info:"Viele Geschäfte wurden zerstört oder übernommen.",q:"Was geschah mit jüdischen Geschäften?",a:"A",l:"O",state:0},
+{lat:51.3749,lng:7.6982,info:"Menschen wurden wegen ihrer Herkunft verfolgt.",q:"Warum wurden Familien verfolgt?",a:"A",l:"K",state:0},
+{lat:51.3743,lng:7.6990,info:"Gedenktafeln erinnern an Opfer.",q:"Woran erinnern Gedenktafeln?",a:"C",l:"R",state:0},
+{lat:51.3742,lng:7.6995,info:"Jeder Stein steht für ein Leben.",q:"Was symbolisieren Stolpersteine?",a:"B",l:"A",state:0},
+{lat:51.3745,lng:7.7040,info:"Religiöse Gebäude wurden zerstört.",q:"Was geschah mit Synagogen?",a:"B",l:"T",state:0},
+{lat:51.3759,lng:7.7099,info:"Erinnern macht Geschichte greifbar.",q:"Warum ist Erinnern wichtig?",a:"A",l:"I",state:0},
+{lat:51.3748,lng:7.7106,info:"Wir lernen für die Zukunft.",q:"Was ist eine wichtige Lehre?",a:"B",l:"E",state:0}
 ];
 
 const answers=[
@@ -199,10 +184,8 @@ update();
 });
 
 window.addEventListener("deviceorientation",e=>{
-if(e.alpha!==null){
 heading=e.webkitCompassHeading||e.alpha;
 updateCompass();
-}
 });
 }
 
@@ -228,29 +211,29 @@ let dir=getDirection(angle(userPos,next));
 document.getElementById("status").innerHTML =
 "Gehe nach <b>"+dir+"</b> ("+d+" m)";
 
-if(d<100 && currentStation===null){
-currentStation=next;
-showQuestion=false;
-showPopup(next);
+let i=points.indexOf(next);
+
+if(d<100 && currentStationIndex!==i){
+currentStationIndex=i;
+showPopup(i);
 }
 }
 
-solution = saved.map(i=>points[i].l).join("");
-document.getElementById("word").innerText=solution;
+document.getElementById("word").innerText =
+saved.map(i=>points[i].l).join("");
 
 document.getElementById("debug").innerText =
 userPos ? "GPS aktiv" : "Kein GPS";
 }
 
-function showPopup(p){
-let i=points.indexOf(p);
-
+function showPopup(i){
+let p=points[i];
 let html="<div class='popup'>";
 
-if(!showQuestion){
+if(p.state===0){
 html+="<h2>Station "+(i+1)+"</h2>";
 html+="<p>"+p.info+"</p>";
-html+="<button onclick='showQuestion=true;showPopup(points["+i+"])'>Frage anzeigen</button>";
+html+="<button onclick='points["+i+"].state=1;showPopup("+i+")'>Frage anzeigen</button>";
 }else{
 html+="<h2>Frage</h2>";
 html+="<p>"+p.q+"</p>";
@@ -261,7 +244,6 @@ html+="<button onclick=\"answer("+i+",'"+k+"')\">"+k+") "+answers[i][k]+"</butto
 }
 
 html+="</div>";
-
 document.getElementById("popup").innerHTML=html;
 }
 
@@ -271,7 +253,7 @@ saved.push(i);
 localStorage.setItem("progress",JSON.stringify(saved));
 
 document.getElementById("popup").innerHTML="";
-currentStation=null;
+currentStationIndex=null;
 update();
 }else{
 alert("Falsch");
