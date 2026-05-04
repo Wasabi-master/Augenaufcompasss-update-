@@ -9,7 +9,7 @@ body{
   margin:0;
   background:#0b1220;
   color:#e5e7eb;
-  font-family:system-ui, -apple-system, sans-serif;
+  font-family:system-ui;
 }
 
 header{
@@ -37,41 +37,8 @@ button{
 }
 
 .compass{
-  width:240px;
-  height:240px;
-  border-radius:50%;
-  margin:30px auto;
-  border:3px solid #374151;
-  display:flex;
-  justify-content:center;
-  align-items:center;
-  position:relative;
-  background:radial-gradient(circle, #111827 40%, #020617);
-  box-shadow:inset 0 0 20px rgba(255,255,255,0.05);
-}
-
-.arrow{
-  position:relative;
-  width:0;
-  height:0;
-  border-left:20px solid transparent;
-  border-right:20px solid transparent;
-  border-bottom:100px solid #38bdf8;
-  filter:drop-shadow(0 0 10px rgba(56,189,248,0.6));
-  transform-origin:center;
-  transition:transform 0.15s linear;
-}
-
-.arrow::after{
-  content:"";
-  position:absolute;
-  top:85px;
-  left:-10px;
-  width:20px;
-  height:20px;
-  background:#38bdf8;
-  border-radius:50%;
-  box-shadow:0 0 10px rgba(56,189,248,0.8);
+  text-align:center;
+  margin:30px 0;
 }
 
 .popup{
@@ -98,7 +65,12 @@ button{
 <button onclick="start()">Start Navigation</button>
 
 <div class="compass">
-  <div class="arrow" id="arrow"></div>
+  <div id="arrow" style="
+    font-size:120px;
+    color:#38bdf8;
+    text-shadow:0 0 20px rgba(56,189,248,0.8);
+    transition:transform 0.15s linear;
+  ">▲</div>
 </div>
 
 <div id="status" class="big"></div>
@@ -120,7 +92,6 @@ let currentStationIndex=null;
 
 let saved = JSON.parse(localStorage.getItem("progress")||"[]");
 
-/* Punkte MIT Info */
 const points=[
 {lat:51.3733,lng:7.6937,info:"Dieses Mahnmal erinnert an eine Zeit, in der Menschen verfolgt wurden.",q:"Woran erinnert das Mahnmal?",a:"B",l:"D",state:0},
 {lat:51.3734,lng:7.6956,info:"Menschen suchten Schutz vor Bombenangriffen.",q:"Wozu dienten Luftschutzstollen?",a:"B",l:"E",state:0},
