@@ -12,41 +12,75 @@ body{
   font-family:system-ui, -apple-system, sans-serif;
 }
 
+/* Header */
 header{
   text-align:center;
-  padding:16px;
+  padding:20px;
+  font-size:22px;
   background:#0f172a;
 }
 
+/* Layout */
 .container{
-  padding:16px;
-  max-width:700px;
+  padding:20px;
+  max-width:800px;
   margin:auto;
 }
 
+/* Buttons */
 button{
   width:100%;
-  padding:12px;
-  margin-top:8px;
+  padding:16px;
+  margin-top:10px;
   border:none;
-  border-radius:10px;
+  border-radius:12px;
   background:#1f2937;
   color:white;
+  font-size:18px;
 }
 
+/* Compass */
+.compass{
+  width:220px;
+  height:220px;
+  border-radius:50%;
+  margin:30px auto;
+  border:3px solid #374151;
+  display:flex;
+  justify-content:center;
+  align-items:center;
+  position:relative;
+}
+
+/* Arrow */
+.arrow{
+  width:6px;
+  height:90px;
+  background:#ef4444;
+  border-radius:6px;
+  transform-origin:bottom;
+  transition:transform 0.15s linear;
+}
+
+/* Popup */
 .popup{
   position:fixed;
   bottom:0;
   left:0;
   right:0;
   background:#111827;
-  padding:20px;
-  border-radius:20px 20px 0 0;
+  padding:25px;
+  border-radius:25px 25px 0 0;
+}
+
+/* Text */
+.big{
+  font-size:20px;
 }
 
 .small{
+  font-size:16px;
   color:#9ca3af;
-  font-size:14px;
 }
 </style>
 </head>
@@ -57,12 +91,16 @@ button{
 
 <div class="container">
 
-<button onclick="start()">Start</button>
+<button onclick="start()">Start Navigation</button>
 
-<div id="status" class="small"></div>
+<div class="compass">
+  <div class="arrow" id="arrow"></div>
+</div>
+
+<div id="status" class="big"></div>
 <div id="debug" class="small"></div>
 
-<div style="margin-top:10px">
+<div style="margin-top:15px;font-size:20px">
 Lösungswort: <b id="word"></b>
 </div>
 
@@ -73,27 +111,29 @@ Lösungswort: <b id="word"></b>
 <script>
 
 let userPos=null;
+let heading=0;
 let solution="";
 let currentStation=null;
 let showQuestion=false;
 
 let saved = JSON.parse(localStorage.getItem("progress")||"[]");
 
+/* Punkte */
 const points=[
-{lat:51.3733,lng:7.6937,info:"Dieses Mahnmal erinnert an eine Zeit, in der Menschen verfolgt und ermordet wurden.",q:"Woran erinnert das Mahnmal?",a:"B",l:"D"},
-{lat:51.3734,lng:7.6956,info:"Menschen mussten sich im Krieg vor Bomben schützen – oft unter der Erde.",q:"Wozu dienten Luftschutzstollen?",a:"B",l:"E"},
-{lat:51.3743,lng:7.6976,info:"Kleine Steine im Boden erinnern an Menschen, die hier gelebt haben.",q:"Was sind Stolpersteine?",a:"B",l:"M"},
-{lat:51.3745,lng:7.6978,info:"Viele Geschäfte wurden gezielt zerstört oder übernommen.",q:"Was geschah mit jüdischen Geschäften?",a:"A",l:"O"},
-{lat:51.3749,lng:7.6982,info:"Menschen wurden verfolgt, nicht wegen Taten, sondern wegen ihrer Identität.",q:"Warum wurden Familien verfolgt?",a:"A",l:"K"},
-{lat:51.3743,lng:7.6990,info:"Gedenktafeln erinnern oft an Opfer und mutige Menschen.",q:"Woran erinnern Gedenktafeln?",a:"C",l:"R"},
-{lat:51.3742,lng:7.6995,info:"Jeder Stein steht für ein einzelnes Leben.",q:"Was symbolisieren Stolpersteine?",a:"B",l:"A"},
-{lat:51.3745,lng:7.7040,info:"Viele religiöse Gebäude wurden zerstört.",q:"Was geschah mit Synagogen?",a:"B",l:"T"},
-{lat:51.3759,lng:7.7099,info:"Erinnern macht Geschichte persönlich.",q:"Warum ist Erinnern wichtig?",a:"A",l:"I"},
-{lat:51.3748,lng:7.7106,info:"Zeitzeugen zeigen, wie wichtig unsere Werte heute sind.",q:"Was ist eine wichtige Lehre?",a:"B",l:"E"}
+{lat:51.3733,lng:7.6937,info:"Dieses Mahnmal erinnert an eine Zeit der Verfolgung.",q:"Woran erinnert das Mahnmal?",a:"B",l:"D"},
+{lat:51.3734,lng:7.6956,info:"Menschen suchten Schutz vor Bomben.",q:"Wozu dienten Luftschutzstollen?",a:"B",l:"E"},
+{lat:51.3743,lng:7.6976,info:"Kleine Steine erinnern an Menschen.",q:"Was sind Stolpersteine?",a:"B",l:"M"},
+{lat:51.3745,lng:7.6978,info:"Geschäfte wurden zerstört.",q:"Was geschah mit jüdischen Geschäften?",a:"A",l:"O"},
+{lat:51.3749,lng:7.6982,info:"Menschen wurden wegen ihrer Herkunft verfolgt.",q:"Warum wurden Familien verfolgt?",a:"A",l:"K"},
+{lat:51.3743,lng:7.6990,info:"Erinnerung an Opfer.",q:"Woran erinnern Gedenktafeln?",a:"C",l:"R"},
+{lat:51.3742,lng:7.6995,info:"Jeder Stein steht für ein Leben.",q:"Was symbolisieren Stolpersteine?",a:"B",l:"A"},
+{lat:51.3745,lng:7.7040,info:"Religiöse Gebäude wurden zerstört.",q:"Was geschah mit Synagogen?",a:"B",l:"T"},
+{lat:51.3759,lng:7.7099,info:"Erinnerung macht Geschichte greifbar.",q:"Warum ist Erinnern wichtig?",a:"A",l:"I"},
+{lat:51.3748,lng:7.7106,info:"Lehren für heute.",q:"Was ist eine wichtige Lehre?",a:"B",l:"E"}
 ];
 
 const answers=[
-{A:"Wiederaufbau",B:"Opfer des Nationalsozialismus",C:"Händler"},
+{A:"Wiederaufbau",B:"NS-Opfer",C:"Händler"},
 {A:"Treffpunkte",B:"Schutzräume",C:"Lager"},
 {A:"Steine",B:"Gedenksteine",C:"Kunst"},
 {A:"Zerstört",B:"Gefördert",C:"Unverändert"},
@@ -105,6 +145,7 @@ const answers=[
 {A:"Vergessen",B:"Demokratie schützen",C:"Vergangenheit"}
 ];
 
+/* Mathe */
 function distance(a,b){
 const R=6371000;
 const dLat=(b.lat-a.lat)*Math.PI/180;
@@ -129,7 +170,9 @@ const dirs=["Norden","Nord-Ost","Osten","Süd-Ost","Süden","Süd-West","Westen"
 return dirs[Math.round(deg/45)%8];
 }
 
+/* Start */
 async function start(){
+
 if(typeof DeviceOrientationEvent!=="undefined" &&
 typeof DeviceOrientationEvent.requestPermission==="function"){
 await DeviceOrientationEvent.requestPermission();
@@ -139,12 +182,29 @@ navigator.geolocation.watchPosition(p=>{
 userPos={lat:p.coords.latitude,lng:p.coords.longitude};
 update();
 });
+
+window.addEventListener("deviceorientation",e=>{
+if(e.alpha!==null){
+heading=e.webkitCompassHeading||e.alpha;
+updateCompass();
+}
+});
+}
+
+/* Navigation */
+function updateCompass(){
+let next=getNext();
+if(!userPos||!next)return;
+
+let rot=angle(userPos,next)-heading;
+document.getElementById("arrow").style.transform=`rotate(${rot}deg)`;
 }
 
 function getNext(){
 return points.find((p,i)=>!saved.includes(i));
 }
 
+/* Update */
 function update(){
 let next=getNext();
 
@@ -169,17 +229,18 @@ document.getElementById("debug").innerText =
 userPos ? "GPS aktiv" : "Kein GPS";
 }
 
+/* Popup */
 function showPopup(p){
 let i=points.indexOf(p);
 
 let html="<div class='popup'>";
 
 if(!showQuestion){
-html+="<h3>Station "+(i+1)+"</h3>";
+html+="<h2>Station "+(i+1)+"</h2>";
 html+="<p>"+p.info+"</p>";
 html+="<button onclick='showQuestion=true;showPopup(points["+i+"])'>Frage anzeigen</button>";
 }else{
-html+="<h3>Frage</h3>";
+html+="<h2>Frage</h2>";
 html+="<p>"+p.q+"</p>";
 
 for(let k in answers[i]){
